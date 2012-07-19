@@ -1,7 +1,10 @@
-var camera, scene, renderer, avatar;
+var camera, scene, renderer, clock,
+avatar, avatar_left_leg, avatar_right_leg;
 
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
+
+  clock = new THREE.Clock(true);
   animate();
 });
 
@@ -14,6 +17,9 @@ function init() {
 
   avatar = buildAvatar();
   scene.add(avatar);
+
+  avatar_left_leg = avatar.getChildByName("left_leg", true);
+  avatar_right_leg = avatar.getChildByName("right_leg", true);
 
   renderer = new THREE.CanvasRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -50,6 +56,7 @@ function buildAvatar() {
   avatar.add(left_arm);
 
   var left_leg = limb(material);
+  left_leg.name = 'left_leg';
   left_leg.rotation.z = Math.PI;
   left_leg.position.y = -250;
   left_leg.position.x = -100;
@@ -57,6 +64,7 @@ function buildAvatar() {
   avatar.add(left_leg);
 
   var right_leg = limb(material);
+  right_leg.name = 'right_leg';
   right_leg.rotation.z = Math.PI;
   right_leg.position.y = -250;
   right_leg.position.x = 100;
@@ -88,6 +96,16 @@ function animate() {
   render();
 }
 
+var w = 500;
 function render() {
+  var t_float = clock.getElapsedTime()
+    , t = t_float * 1000
+    , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
+
+  avatar_left_leg.rotation.x  =    amplitude*(Math.PI/8);
+  avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/8);
+
+//console.log(t);
+
   renderer.render(scene, camera);
 }
