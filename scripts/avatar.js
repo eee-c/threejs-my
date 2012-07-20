@@ -15,26 +15,10 @@ function init() {
   camera.position.z = 1000;
   scene.add(camera);
 
-  // THREE.FlyControls.prototype.mousemove = function() {};
-  // THREE.FlyControls.prototype.mousedown = function() {};
-  // THREE.FlyControls.prototype.mouseup = function() {};
-
   controls = new THREE.FlyControls(camera);
   controls.movementSpeed = 1000;
   controls.rollSpeed = 1.0;
   controls.dragToLook = true;
-
-  // controls.prototype.mousemove = function() {};
-  // controls.prototype.mousedown = function() {};
-  // controls.prototype.mouseup = function() {};
-
-  // controls.lookSpeed = 0.125;
-  // controls.lookVertical = true;
-
-  //controls.freeze = true;
-
-  // controls.movementSpeed = 100.0;
-	// controls.lookSpeed = 5.0;
 
   avatar = buildAvatar();
   scene.add(avatar);
