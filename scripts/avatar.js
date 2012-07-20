@@ -1,5 +1,5 @@
-var camera, scene, renderer, clock,
-avatar, avatar_left_leg, avatar_right_leg;
+var camera, scene, renderer, clock, controls,
+avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm;
 
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
@@ -15,9 +15,32 @@ function init() {
   camera.position.z = 1000;
   scene.add(camera);
 
+  // THREE.FlyControls.prototype.mousemove = function() {};
+  // THREE.FlyControls.prototype.mousedown = function() {};
+  // THREE.FlyControls.prototype.mouseup = function() {};
+
+  controls = new THREE.FlyControls(camera);
+  controls.movementSpeed = 1000;
+  controls.rollSpeed = 1.0;
+  controls.dragToLook = true;
+
+  // controls.prototype.mousemove = function() {};
+  // controls.prototype.mousedown = function() {};
+  // controls.prototype.mouseup = function() {};
+
+  // controls.lookSpeed = 0.125;
+  // controls.lookVertical = true;
+
+  //controls.freeze = true;
+
+  // controls.movementSpeed = 100.0;
+	// controls.lookSpeed = 5.0;
+
   avatar = buildAvatar();
   scene.add(avatar);
 
+  avatar_left_arm = avatar.getChildByName("left_arm", true);
+  avatar_right_arm = avatar.getChildByName("right_arm", true);
   avatar_left_leg = avatar.getChildByName("left_leg", true);
   avatar_right_leg = avatar.getChildByName("right_leg", true);
 
@@ -43,6 +66,7 @@ function buildAvatar() {
   avatar.add(head);
 
   var right_arm = limb(material);
+  right_arm.name = 'right_arm';
   right_arm.position.x = 150;
   right_arm.position.z = -50;
   right_arm.rotation.z = -Math.PI/3;
@@ -50,6 +74,7 @@ function buildAvatar() {
   avatar.add(right_arm);
 
   var left_arm = limb(material);
+  left_arm.name = 'left_arm';
   left_arm.position.x = -150;
   left_arm.position.z = -50;
   left_arm.rotation.z = Math.PI/3;
@@ -58,17 +83,17 @@ function buildAvatar() {
   var left_leg = limb(material);
   left_leg.name = 'left_leg';
   left_leg.rotation.z = Math.PI;
-  left_leg.position.y = -250;
+  left_leg.position.y = -275;
   left_leg.position.x = -100;
-  left_leg.position.z = -50;
+  left_leg.position.z = -150;
   avatar.add(left_leg);
 
   var right_leg = limb(material);
   right_leg.name = 'right_leg';
   right_leg.rotation.z = Math.PI;
-  right_leg.position.y = -250;
+  right_leg.position.y = -275;
   right_leg.position.x = 100;
-  right_leg.position.z = -50;
+  right_leg.position.z = -150;
   avatar.add(right_leg);
 
   return avatar;
@@ -105,7 +130,10 @@ function render() {
   avatar_left_leg.rotation.x  =    amplitude*(Math.PI/8);
   avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/8);
 
-//console.log(t);
+  avatar_left_arm.rotation.x  =    amplitude*(Math.PI/8);
+  avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/8);
 
   renderer.render(scene, camera);
+
+  controls.update(clock.getDelta());
 }
