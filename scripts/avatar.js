@@ -20,6 +20,13 @@ function init() {
   controls.rollSpeed = 5.0;
   controls.dragToLook = true;
 
+  var M = 1000 * 10;
+  var skyGeometry = new THREE.CubeGeometry(M, M, M, 4, 4, 4, null, true);
+  var skyMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
+  var skyboxMesh  = new THREE.Mesh(skyGeometry, skyMaterial);
+  skyboxMesh.flipSided = true;
+  scene.add(skyboxMesh);
+
   avatar = buildAvatar();
   scene.add(avatar);
 
@@ -39,19 +46,20 @@ function buildAvatar() {
 
   var material = new THREE.MeshNormalMaterial();
 
-  var body_geometry = new THREE.CylinderGeometry(1, 300, 300);
+  var body_geometry = new THREE.CylinderGeometry(1, 100, 100);
   var body = new THREE.Mesh(body_geometry, material);
   avatar.add(body);
 
-  var head_geometry = new THREE.SphereGeometry(200);
+  var head_geometry = new THREE.SphereGeometry(75);
   var head = new THREE.Mesh(head_geometry, material);
-  head.position.y = (200 + 150) * .9;
+  head.position.y = (100 + 35) * .8;
   avatar.add(head);
 
   var socket;
 
+  // Left Arm
   socket = new THREE.Object3D();
-  socket.position.x = 125;
+  socket.position.x = 40;
   socket.rotation.z = -Math.PI/3;
 
   var left_arm = limb(material);
@@ -60,9 +68,9 @@ function buildAvatar() {
 
   avatar.add(socket);
 
-  // Right Armx
+  // Right Arm
   socket = new THREE.Object3D();
-  socket.position.x = -125;
+  socket.position.x = -40;
   socket.rotation.z = Math.PI/3;
 
   var right_arm = limb(material);
@@ -73,8 +81,8 @@ function buildAvatar() {
 
   //  Right Leg
   socket = new THREE.Object3D();
-  socket.position.y = -150;
-  socket.position.x = 100;
+  socket.position.y = -50;
+  socket.position.x = 35;
   socket.rotation.z = Math.PI;
 
   var right_leg = limb(material);
@@ -85,8 +93,8 @@ function buildAvatar() {
 
   // Left Leg
   socket = new THREE.Object3D();
-  socket.position.y = -150;
-  socket.position.x = -100;
+  socket.position.y = -50;
+  socket.position.x = -35;
   socket.rotation.z = Math.PI;
 
   var left_leg = limb(material);
@@ -101,14 +109,14 @@ function buildAvatar() {
 function limb(material) {
   var limb = new THREE.Object3D();
 
-  var arm_geometry = new THREE.CylinderGeometry(25, 25, 300);
+  var arm_geometry = new THREE.CylinderGeometry(10, 10, 100);
   var arm = new THREE.Mesh(arm_geometry, material);
-  arm.position.y = 150;
+  arm.position.y = 50;
   limb.add(arm);
 
-  var hand_geometry = new THREE.SphereGeometry(75);
+  var hand_geometry = new THREE.SphereGeometry(25);
   var hand = new THREE.Mesh(hand_geometry, material);
-  hand.position.y = 300;
+  hand.position.y = 100;
   limb.add(hand);
 
   return limb;
@@ -127,11 +135,11 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
-  avatar_left_leg.rotation.x  =    amplitude*(Math.PI/8);
-  avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/8);
+  avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
+  avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
 
-  avatar_left_arm.rotation.x  =    amplitude*(Math.PI/8);
-  avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/8);
+  avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
+  avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
 
   renderer.render(scene, camera);
 
