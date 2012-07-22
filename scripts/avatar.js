@@ -17,7 +17,7 @@ function init() {
 
   controls = new THREE.FlyControls(camera);
   controls.movementSpeed = 1000;
-  controls.rollSpeed = 1.0;
+  controls.rollSpeed = 5.0;
   controls.dragToLook = true;
 
   avatar = buildAvatar();
@@ -41,44 +41,59 @@ function buildAvatar() {
 
   var body_geometry = new THREE.CylinderGeometry(1, 300, 300);
   var body = new THREE.Mesh(body_geometry, material);
-  body.position.z = -150;
   avatar.add(body);
 
   var head_geometry = new THREE.SphereGeometry(200);
   var head = new THREE.Mesh(head_geometry, material);
-  head.position.y = 200;
+  head.position.y = (200 + 150) * .9;
   avatar.add(head);
 
-  var right_arm = limb(material);
-  right_arm.name = 'right_arm';
-  right_arm.position.x = 150;
-  right_arm.position.z = -50;
-  right_arm.rotation.z = -Math.PI/3;
+  var socket;
 
-  avatar.add(right_arm);
+  socket = new THREE.Object3D();
+  socket.position.x = 125;
+  socket.rotation.z = -Math.PI/3;
 
   var left_arm = limb(material);
   left_arm.name = 'left_arm';
-  left_arm.position.x = -150;
-  left_arm.position.z = -50;
-  left_arm.rotation.z = Math.PI/3;
-  avatar.add(left_arm);
+  socket.add(left_arm);
 
-  var left_leg = limb(material);
-  left_leg.name = 'left_leg';
-  left_leg.rotation.z = Math.PI;
-  left_leg.position.y = -275;
-  left_leg.position.x = -100;
-  left_leg.position.z = -150;
-  avatar.add(left_leg);
+  avatar.add(socket);
+
+  // Right Armx
+  socket = new THREE.Object3D();
+  socket.position.x = -125;
+  socket.rotation.z = Math.PI/3;
+
+  var right_arm = limb(material);
+  right_arm.name = 'right_arm';
+  socket.add(right_arm);
+
+  avatar.add(socket);
+
+  //  Right Leg
+  socket = new THREE.Object3D();
+  socket.position.y = -150;
+  socket.position.x = 100;
+  socket.rotation.z = Math.PI;
 
   var right_leg = limb(material);
   right_leg.name = 'right_leg';
-  right_leg.rotation.z = Math.PI;
-  right_leg.position.y = -275;
-  right_leg.position.x = 100;
-  right_leg.position.z = -150;
-  avatar.add(right_leg);
+  socket.add(right_leg);
+
+  avatar.add(socket);
+
+  // Left Leg
+  socket = new THREE.Object3D();
+  socket.position.y = -150;
+  socket.position.x = -100;
+  socket.rotation.z = Math.PI;
+
+  var left_leg = limb(material);
+  left_leg.name = 'left_leg';
+  socket.add(left_leg);
+
+  avatar.add(socket);
 
   return avatar;
 }
@@ -86,13 +101,14 @@ function buildAvatar() {
 function limb(material) {
   var limb = new THREE.Object3D();
 
-  var arm_geometry = new THREE.CylinderGeometry(25, 25, 500);
+  var arm_geometry = new THREE.CylinderGeometry(25, 25, 300);
   var arm = new THREE.Mesh(arm_geometry, material);
+  arm.position.y = 150;
   limb.add(arm);
 
   var hand_geometry = new THREE.SphereGeometry(75);
   var hand = new THREE.Mesh(hand_geometry, material);
-  hand.position.y = 250;
+  hand.position.y = 300;
   limb.add(hand);
 
   return limb;
