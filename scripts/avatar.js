@@ -12,20 +12,36 @@ function init() {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-  camera.position.z = 1000;
+  camera.position.z = 1500;
+  camera.position.y = 750;
   scene.add(camera);
 
   controls = new THREE.FlyControls(camera);
-  controls.movementSpeed = 1000;
+  controls.movementSpeed = 10000;
   controls.rollSpeed = 5.0;
   controls.dragToLook = true;
 
-  var M = 1000 * 10;
-  var skyGeometry = new THREE.CubeGeometry(M, M, M, 4, 4, 4, null, true);
-  var skyMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB});
-  var skyboxMesh  = new THREE.Mesh(skyGeometry, skyMaterial);
+  // Sky box
+  var M = 1000 * 10
+    , skyGeometry = new THREE.SphereGeometry(M/2, 11, 11)
+    // , skyGeometry = new THREE.CubeGeometry(M, M, M, 5, 5, 5, null, true)
+    , skyMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB})
+    , skyboxMesh  = new THREE.Mesh(skyGeometry, skyMaterial);
   skyboxMesh.flipSided = true;
   scene.add(skyboxMesh);
+
+  // Sea
+  var seaGeometry = new THREE.PlaneGeometry(M, M, 3, 3)
+    , seaMaterial = new THREE.MeshBasicMaterial({color: 0x483D8B})
+    , seaMesh = new THREE.Mesh(seaGeometry, seaMaterial);
+  seaMesh.position.y = -1;
+  scene.add(seaMesh);
+
+  // Grass
+  var grassGeometry = new THREE.PlaneGeometry(M*0.6, M*0.6, 3, 3)
+    , grassMaterial = new THREE.MeshBasicMaterial({color: 0x7CFC00})
+    , grassMesh = new THREE.Mesh(grassGeometry, grassMaterial);
+  scene.add(grassMesh);
 
   avatar = buildAvatar();
   scene.add(avatar);
@@ -35,7 +51,7 @@ function init() {
   avatar_left_leg = avatar.getChildByName("left_leg", true);
   avatar_right_leg = avatar.getChildByName("right_leg", true);
 
-  renderer = new THREE.CanvasRenderer();
+  renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   document.body.appendChild(renderer.domElement);
@@ -103,6 +119,7 @@ function buildAvatar() {
 
   avatar.add(socket);
 
+  avatar.position.y = 175;
   return avatar;
 }
 
