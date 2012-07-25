@@ -11,16 +11,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 function init() {
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-  camera.position.z = 1500;
-  camera.position.y = 750;
-  scene.add(camera);
-
-  controls = new THREE.FlyControls(camera);
-  controls.movementSpeed = 10000;
-  controls.rollSpeed = 5.0;
-  controls.dragToLook = true;
-
   // Sky box
   var M = 1000 * 10
     , skyGeometry = new THREE.SphereGeometry(M/2, 11, 11)
@@ -45,6 +35,15 @@ function init() {
 
   avatar = buildAvatar();
   scene.add(avatar);
+
+  controls = new THREE.FirstPersonControls(avatar);
+  controls.movementSpeed = 10000;
+  controls.activeLook = false;
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+  camera.position.z = 1500;
+  camera.position.y = 750;
+  avatar.add(camera);
 
   avatar_left_arm = avatar.getChildByName("left_arm", true);
   avatar_right_arm = avatar.getChildByName("right_arm", true);
@@ -152,12 +151,14 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
-  avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
-  avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
+  if (controls.moveForward || controls.moveBackward ||
+      controls.moveRight || controls.moveLeft) {
+    avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
+    avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
 
-  avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
-  avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
-
+    avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
+    avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
+  }
   renderer.render(scene, camera);
 
   controls.update(clock.getDelta());
