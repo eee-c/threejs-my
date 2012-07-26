@@ -34,16 +34,18 @@ function init() {
   scene.add(grassMesh);
 
   avatar = buildAvatar();
-  scene.add(avatar);
+  var a_frame = new THREE.Object3D();
+  a_frame.add(avatar);
+  scene.add(a_frame);
 
-  controls = new THREE.FirstPersonControls(avatar);
+  controls = new THREE.FirstPersonControls(a_frame);
   controls.movementSpeed = 10000;
   controls.activeLook = false;
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
   camera.position.z = 1500;
   camera.position.y = 750;
-  avatar.add(camera);
+  a_frame.add(camera);
 
   avatar_left_arm = avatar.getChildByName("left_arm", true);
   avatar_right_arm = avatar.getChildByName("right_arm", true);
@@ -142,6 +144,7 @@ function limb(material) {
 function animate() {
   // note: three.js includes requestAnimationFrame shim
   requestAnimationFrame(animate);
+  TWEEN.update();
   render();
 }
 
@@ -158,8 +161,24 @@ function render() {
 
     avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
     avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
+
+    if (controls.moveLeft) spinAvatar(-Math.PI/2);
+    if (controls.moveRight) spinAvatar(Math.PI/2);
   }
+  else {
+    spinAvatar(0);
+  }
+
   renderer.render(scene, camera);
 
   controls.update(clock.getDelta());
+}
+
+function spinAvatar(angle) {
+  new TWEEN.Tween( { y: avatar.rotation.y } )
+      .to( { y: angle }, 100 )
+      .onUpdate( function () {
+          avatar.rotation.y = this.y;
+      } )
+      .start();
 }
