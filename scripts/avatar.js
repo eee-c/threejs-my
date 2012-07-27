@@ -154,6 +154,11 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
+  if (controls.object.position.z >  2800) controls.moveLeft = false;
+  if (controls.object.position.z < -2800) controls.moveRight = false;
+  if (controls.object.position.x >  2800) controls.moveBackward = false;
+  if (controls.object.position.x < -2800) controls.moveForward = false;
+
   if (controls.moveForward || controls.moveBackward ||
       controls.moveRight || controls.moveLeft) {
     avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
