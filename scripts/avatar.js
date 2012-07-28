@@ -1,5 +1,6 @@
 var camera, scene, renderer, clock, controls,
-avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm;
+avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm,
+walls;
 
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
@@ -10,6 +11,13 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
 function init() {
   scene = new THREE.Scene();
+
+  var wallGeometry = new THREE.CubeGeometry(100, 1000, 5000, 5, 5, 5)
+    , wallMaterial = new THREE.MeshBasicMaterial({color: 0xFFD700})
+    , wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+  scene.add(wallMesh);
+
+  walls = [wallMesh];
 
   // Sky box
   var M = 1000 * 10
@@ -154,10 +162,12 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
-  if (controls.object.position.z >  2800) controls.moveLeft = false;
-  if (controls.object.position.z < -2800) controls.moveRight = false;
-  if (controls.object.position.x >  2800) controls.moveBackward = false;
-  if (controls.object.position.x < -2800) controls.moveForward = false;
+  detectCollision();
+
+  // if (controls.object.position.z >  2800) controls.moveLeft = false;
+  // if (controls.object.position.z < -2800) controls.moveRight = false;
+  // if (controls.object.position.x >  2800) controls.moveBackward = false;
+  // if (controls.object.position.x < -2800) controls.moveForward = false;
 
   if (controls.moveForward || controls.moveBackward ||
       controls.moveRight || controls.moveLeft) {
@@ -177,6 +187,24 @@ function render() {
   renderer.render(scene, camera);
 
   controls.update(clock.getDelta());
+}
+
+function detectCollision() {
+  var vector = controls.target.clone().subSelf( controls.object.position ).normalize();
+  // var ray = new THREE.Ray(controls.object.position, new THREE.Vector3( 0, 0, 1 ));
+  var ray = new THREE.Ray(controls.object.position, vector);
+  var intersects = ray.intersectObjects(walls);
+
+  if (intersects.length > 0) {
+    if (intersects[0].distance < 5) {
+      console.log(intersects);
+    }
+//    debugger;
+  }
+  else {
+    // console.log(ray);
+  }
+  //debugger
 }
 
 function spinAvatar(angle) {
