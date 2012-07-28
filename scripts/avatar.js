@@ -1,6 +1,6 @@
 var camera, scene, renderer, clock, controls,
 avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm,
-walls;
+island, walls, fence;
 
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
@@ -9,37 +9,45 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   animate();
 });
 
+var ISLAND_WIDTH = 5000
+  , ISLAND_HALF = ISLAND_WIDTH / 2;
+
 function init() {
   scene = new THREE.Scene();
 
-  var wallGeometry = new THREE.CubeGeometry(100, 1000, 5000, 5, 5, 5)
-    , wallMaterial = new THREE.MeshBasicMaterial({color: 0xFFD700})
-    , wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-  scene.add(wallMesh);
+  var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
+    , fenceMaterial = new THREE.MeshBasicMaterial({wireframe: true});
+  fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
+  fence.flipSided = true;
+  scene.add(fence);
 
-  walls = [wallMesh];
+  // var wallGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 100)
+  //   , wallMaterial = new THREE.MeshBasicMaterial({wireframe: true})
+  //   , wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+  // wallMesh.position.z = ISLAND_HALF;
+  // scene.add(wallMesh);
+
+  // walls = [wallMesh];
 
   // Sky box
-  var M = 1000 * 10
-    , skyGeometry = new THREE.SphereGeometry(M/2, 11, 11)
-    // , skyGeometry = new THREE.CubeGeometry(M, M, M, 5, 5, 5, null, true)
+  var skyGeometry = new THREE.SphereGeometry(ISLAND_WIDTH, 11, 11)
     , skyMaterial = new THREE.MeshBasicMaterial({color: 0x87CEEB})
     , skyboxMesh  = new THREE.Mesh(skyGeometry, skyMaterial);
   skyboxMesh.flipSided = true;
   scene.add(skyboxMesh);
 
   // Sea
-  var seaGeometry = new THREE.PlaneGeometry(M, M, 3, 3)
+  var seaGeometry = new THREE.PlaneGeometry(2*ISLAND_WIDTH, 2*ISLAND_WIDTH, 3, 3)
     , seaMaterial = new THREE.MeshBasicMaterial({color: 0x483D8B})
     , seaMesh = new THREE.Mesh(seaGeometry, seaMaterial);
   seaMesh.position.y = -1;
   scene.add(seaMesh);
 
-  // Grass
-  var grassGeometry = new THREE.PlaneGeometry(M*0.6, M*0.6, 3, 3)
-    , grassMaterial = new THREE.MeshBasicMaterial({color: 0x7CFC00})
-    , grassMesh = new THREE.Mesh(grassGeometry, grassMaterial);
-  scene.add(grassMesh);
+  // Island
+  var islandGeometry = new THREE.PlaneGeometry(ISLAND_WIDTH, ISLAND_WIDTH)
+    , islandMaterial = new THREE.MeshBasicMaterial({color: 0x7CFC00});
+  island = new THREE.Mesh(islandGeometry, islandMaterial);
+  scene.add(island);
 
   avatar = buildAvatar();
   var a_frame = new THREE.Object3D();
@@ -162,12 +170,12 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
-  detectCollision();
+ detectCollision();
 
-  // if (controls.object.position.z >  2800) controls.moveLeft = false;
-  // if (controls.object.position.z < -2800) controls.moveRight = false;
-  // if (controls.object.position.x >  2800) controls.moveBackward = false;
-  // if (controls.object.position.x < -2800) controls.moveForward = false;
+  // if (controls.object.position.z >  ISLAND_HALF) controls.moveLeft = false;
+  // if (controls.object.position.z < -ISLAND_HALF) controls.moveRight = false;
+  // if (controls.object.position.x >  ISLAND_HALF) controls.moveBackward = false;
+  // if (controls.object.position.x < -ISLAND_HALF) controls.moveForward = false;
 
   if (controls.moveForward || controls.moveBackward ||
       controls.moveRight || controls.moveLeft) {
@@ -190,21 +198,24 @@ function render() {
 }
 
 function detectCollision() {
-  var vector = controls.target.clone().subSelf( controls.object.position ).normalize();
-  // var ray = new THREE.Ray(controls.object.position, new THREE.Vector3( 0, 0, 1 ));
+  var x, z;
+  if (controls.moveLeft) z = 1;
+  if (controls.moveRight) z = -1;
+  if (controls.moveBackward) x = 1;
+  if (controls.moveForward) x = -1;
+
+  var vector = new THREE.Vector3( x, 0, z );
   var ray = new THREE.Ray(controls.object.position, vector);
-  var intersects = ray.intersectObjects(walls);
+  var intersects = ray.intersectObject(fence);
 
   if (intersects.length > 0) {
-    if (intersects[0].distance < 5) {
-      console.log(intersects);
+    if (intersects[0].distance < 50) {
+      if (z ==  1) controls.moveLeft = false;
+      if (z == -1) controls.moveRight = false;
+      if (x ==  1) controls.moveBackward = false;
+      if (x == -1) controls.moveForward = false;
     }
-//    debugger;
   }
-  else {
-    // console.log(ray);
-  }
-  //debugger
 }
 
 function spinAvatar(angle) {
