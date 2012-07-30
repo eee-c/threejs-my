@@ -1,6 +1,6 @@
 var camera, scene, renderer, clock, controls,
 avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm,
-island, walls, fence;
+island, blockers;
 
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
@@ -9,25 +9,19 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   animate();
 });
 
-var ISLAND_WIDTH = 5000
+var ISLAND_WIDTH = 10 * 1000
   , ISLAND_HALF = ISLAND_WIDTH / 2;
 
 function init() {
   scene = new THREE.Scene();
 
   var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
-    , fenceMaterial = new THREE.MeshBasicMaterial({wireframe: true});
-  fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
+    , fenceMaterial = new THREE.MeshBasicMaterial({wireframe: true})
+    , fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
   fence.flipSided = true;
   scene.add(fence);
 
-  // var wallGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 100)
-  //   , wallMaterial = new THREE.MeshBasicMaterial({wireframe: true})
-  //   , wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
-  // wallMesh.position.z = ISLAND_HALF;
-  // scene.add(wallMesh);
-
-  // walls = [wallMesh];
+  blockers = [fence];
 
   // Sky box
   var skyGeometry = new THREE.SphereGeometry(ISLAND_WIDTH, 11, 11)
@@ -49,6 +43,8 @@ function init() {
   island = new THREE.Mesh(islandGeometry, islandMaterial);
   scene.add(island);
 
+  scene.add(river());
+
   avatar = buildAvatar();
   var a_frame = new THREE.Object3D();
   a_frame.add(avatar);
@@ -59,8 +55,13 @@ function init() {
   controls.activeLook = false;
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-  camera.position.z = 1500;
+  camera.position.z = 1000;
   camera.position.y = 750;
+  camera.rotation.x = -Math.PI / 8;
+  // camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 100000);
+  // camera.rotation.x = -Math.PI / 64;
+  // camera.position.z = 10000;
+  // camera.position.y = 750;
   a_frame.add(camera);
 
   avatar_left_arm = avatar.getChildByName("left_arm", true);
@@ -70,6 +71,7 @@ function init() {
 
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColorHex(0x87CEEB);
 
   document.body.appendChild(renderer.domElement);
 }
@@ -156,6 +158,54 @@ function limb(material) {
   return limb;
 }
 
+function river() {
+  var river = new THREE.Object3D()
+    , riverMaterial = new THREE.MeshBasicMaterial({color: 0x483D8B})
+    , wallMaterial = new THREE.MeshBasicMaterial()
+    , width = 400;
+
+  var waterShape, water, wallShape, wall;
+
+  // Bottom segment of the river
+  var bottom = new THREE.Object3D();
+
+  waterShape = new THREE.PlaneGeometry(ISLAND_WIDTH/2, width);
+  water = new THREE.Mesh(waterShape, riverMaterial);
+  wallShape = new THREE.CubeGeometry(ISLAND_WIDTH/2, 10000, width);
+  wall = new THREE.Mesh(wallShape, wallMaterial);
+  wall.visible = false;
+  bottom.add(water);
+  bottom.add(wall);
+  bottom.position.x = ISLAND_WIDTH/4;
+  bottom.position.z = ISLAND_WIDTH/4;
+
+  // list of water that blocks avatar
+  blockers.push(wall);
+
+  river.add(bottom);
+
+  // Top segment of the river
+  var top = new THREE.Object3D();
+
+  waterShape = new THREE.PlaneGeometry(ISLAND_WIDTH/2, width);
+  water = new THREE.Mesh(waterShape, riverMaterial);
+  wallShape = new THREE.CubeGeometry(ISLAND_WIDTH/2, 10000, width);
+  wall = new THREE.Mesh(wallShape, wallMaterial);
+  wall.visible = false;
+  top.add(water);
+  top.add(wall);
+  top.position.x = -ISLAND_WIDTH/3;
+  top.position.z = ISLAND_WIDTH/4;
+
+  // list of water that blocks avatar
+  blockers.push(wall);
+
+  river.add(top);
+
+  river.position.y = 1;
+  return river;
+}
+
 
 function animate() {
   // note: three.js includes requestAnimationFrame shim
@@ -172,10 +222,9 @@ function render() {
 
  detectCollision();
 
-  // if (controls.object.position.z >  ISLAND_HALF) controls.moveLeft = false;
-  // if (controls.object.position.z < -ISLAND_HALF) controls.moveRight = false;
-  // if (controls.object.position.x >  ISLAND_HALF) controls.moveBackward = false;
-  // if (controls.object.position.x < -ISLAND_HALF) controls.moveForward = false;
+  if (controls.moveUp) controls.moveUp = false;
+  if (controls.moveDown) controls.moveDown = false;
+
 
   if (controls.moveForward || controls.moveBackward ||
       controls.moveRight || controls.moveLeft) {
@@ -206,14 +255,14 @@ function detectCollision() {
 
   var vector = new THREE.Vector3( x, 0, z );
   var ray = new THREE.Ray(controls.object.position, vector);
-  var intersects = ray.intersectObject(fence);
+  var intersects = ray.intersectObjects(blockers);
 
   if (intersects.length > 0) {
-    if (intersects[0].distance < 50) {
-      if (z ==  1) controls.moveLeft = false;
-      if (z == -1) controls.moveRight = false;
-      if (x ==  1) controls.moveBackward = false;
-      if (x == -1) controls.moveForward = false;
+    if (intersects[0].distance < 75) {
+      if (controls.moveLeft) controls.moveLeft = false;
+      if (controls.moveRight) controls.moveRight = false;
+      if (controls.moveBackward) controls.moveBackward = false;
+      if (controls.moveForward) controls.moveForward = false;
     }
   }
 }
