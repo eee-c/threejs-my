@@ -2,6 +2,9 @@ var camera, scene, renderer, clock, controls,
 avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm,
 island, blockers;
 
+var canvas = !! window.CanvasRenderingContext2D;
+var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
+
 document.addEventListener( "DOMContentLoaded", function( e ) {
   init();
 
@@ -69,11 +72,16 @@ function init() {
   avatar_left_leg = avatar.getChildByName("left_leg", true);
   avatar_right_leg = avatar.getChildByName("right_leg", true);
 
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColorHex(0x87CEEB);
-
-  document.body.appendChild(renderer.domElement);
+  if (webgl) renderer = new THREE.WebGLRenderer();
+  else if (canvas) renderer = new THREE.CanvasRenderer();
+  if (renderer) {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColorHex(0x87CEEB);
+    document.body.appendChild(renderer.domElement);
+  }
+  else {
+    alert("Can't make renderer. What kind of browser are you using?!");
+  }
 }
 
 function buildAvatar() {
