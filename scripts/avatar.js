@@ -19,9 +19,10 @@ function init() {
   scene = new THREE.Scene();
 
   var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
-    , fenceMaterial = new THREE.MeshBasicMaterial({wireframe: true})
+    , fenceMaterial = new THREE.MeshBasicMaterial()
     , fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
   fence.flipSided = true;
+  fence.visible = false;
   scene.add(fence);
 
   blockers = [fence];
