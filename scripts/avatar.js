@@ -93,10 +93,22 @@ function buildAvatar() {
   var body = new THREE.Mesh(body_geometry, material);
   avatar.add(body);
 
+  var img = new Image();
+  var texture = new THREE.Texture(img);
+  img.onload = function () { texture.needsUpdate = true; };
+  img.src = 'face.png';
+  texture.needsUpdate = true;
+
+  var head_material = new THREE.MeshPhongMaterial({map: texture});
   var head_geometry = new THREE.SphereGeometry(75);
-  var head = new THREE.Mesh(head_geometry, material);
+  var head = new THREE.Mesh(head_geometry, head_material);
   head.position.y = (100 + 35) * .8;
+  head.rotation.y = -Math.PI/2;
   avatar.add(head);
+
+  var light = new THREE.PointLight(0xffffff, 2);
+  light.position.set(25, 150, 500);
+  avatar.add(light);
 
   var socket;
 
