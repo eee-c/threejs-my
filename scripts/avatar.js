@@ -53,6 +53,8 @@ function init() {
   a_frame.add(avatar);
   scene.add(a_frame);
 
+ scene.add(new THREE.AmbientLight(0xffffff));
+
   controls = new THREE.FirstPersonControls(a_frame);
   controls.movementSpeed = 10000;
   controls.activeLook = false;
@@ -99,15 +101,18 @@ function buildAvatar() {
   img.src = 'face.png';
   texture.needsUpdate = true;
 
-  var head_material = new THREE.MeshPhongMaterial({map: texture});
+  var head_material = new THREE.MeshPhongMaterial({
+    map: texture,
+    shininess: 40
+  });
   var head_geometry = new THREE.SphereGeometry(75);
   var head = new THREE.Mesh(head_geometry, head_material);
   head.position.y = (100 + 35) * .8;
   head.rotation.y = -Math.PI/2;
   avatar.add(head);
 
-  var light = new THREE.PointLight(0xffffff, 2);
-  light.position.set(25, 150, 500);
+  var light = new THREE.PointLight(0xffffff, 10);
+  light.position.set(50, 300, 0);
   avatar.add(light);
 
   var socket;
@@ -256,6 +261,8 @@ function render() {
 
     if (controls.moveLeft) spinAvatar(-Math.PI/2);
     if (controls.moveRight) spinAvatar(Math.PI/2);
+    if (controls.moveForward) spinAvatar(Math.PI);
+    if (controls.moveBackward) spinAvatar(0);
   }
   else {
     spinAvatar(0);
