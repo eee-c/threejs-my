@@ -1,3 +1,6 @@
+Physijs.scripts.worker = 'scripts/physijs_worker.js';
+Physijs.scripts.ammo = 'ammo.js';
+
 var camera, scene, renderer, clock, controls,
 avatar, avatar_left_leg, avatar_right_leg, avatar_left_arm, avatar_right_arm,
 island, blockers;
@@ -16,7 +19,8 @@ var ISLAND_WIDTH = 10 * 1000
   , ISLAND_HALF = ISLAND_WIDTH / 2;
 
 function init() {
-  scene = new THREE.Scene();
+  // scene = new THREE.Scene();
+  scene = new Physijs.Scene;
 
   var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
     , fenceMaterial = new THREE.MeshBasicMaterial()
@@ -42,19 +46,41 @@ function init() {
   scene.add(seaMesh);
 
   // Island
-  var islandGeometry = new THREE.PlaneGeometry(ISLAND_WIDTH, ISLAND_WIDTH)
-    , islandMaterial = new THREE.MeshBasicMaterial({color: 0x7CFC00});
-  island = new THREE.Mesh(islandGeometry, islandMaterial);
+  var island = new Physijs.PlaneMesh(
+    new THREE.PlaneGeometry(ISLAND_WIDTH, ISLAND_WIDTH),
+    new THREE.MeshBasicMaterial({color: 0x7CFC00})
+  );
   scene.add(island);
 
   scene.add(river());
 
+  // A ball
+  var ball = new Physijs.SphereMesh(
+    new THREE.SphereGeometry(100),
+    new THREE.MeshNormalMaterial()
+  );
+  ball.position.z = -500;
+  ball.position.y = 150;
+  scene.add(ball);
+
   avatar = buildAvatar();
-  var a_frame = new THREE.Object3D();
+  avatar.position.y = 30;
+  // a_frame = new THREE.Object3D(
+  a_frame = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(250, 250, 250)
+  );
+  a_frame.position.y = 125;
   a_frame.add(avatar);
+
+  // avatarField = new Physijs.BoxMesh(
+  //   new THREE.CubeGeometry(100, 100),
+  //   new THREE.MeshBasicMaterial()
+  // );
+  // a_frame.add(avatarField);
+
   scene.add(a_frame);
 
- scene.add(new THREE.AmbientLight(0xffffff));
+  scene.add(new THREE.AmbientLight(0xffffff));
 
   controls = new THREE.FirstPersonControls(a_frame);
   controls.movementSpeed = 10000;
@@ -70,10 +96,10 @@ function init() {
   // camera.position.y = 750;
   a_frame.add(camera);
 
-  avatar_left_arm = avatar.getChildByName("left_arm", true);
-  avatar_right_arm = avatar.getChildByName("right_arm", true);
-  avatar_left_leg = avatar.getChildByName("left_leg", true);
-  avatar_right_leg = avatar.getChildByName("right_leg", true);
+  // avatar_left_arm = avatar.getChildByName("left_arm", true);
+  // avatar_right_arm = avatar.getChildByName("right_arm", true);
+  // avatar_left_leg = avatar.getChildByName("left_leg", true);
+  // avatar_right_leg = avatar.getChildByName("right_leg", true);
 
   if (webgl) renderer = new THREE.WebGLRenderer();
   else if (canvas) renderer = new THREE.CanvasRenderer();
@@ -92,8 +118,11 @@ function buildAvatar() {
 
   var material = new THREE.MeshNormalMaterial();
 
-  var body_geometry = new THREE.CylinderGeometry(1, 100, 100);
-  var body = new THREE.Mesh(body_geometry, material);
+  var body = new THREE.Mesh(
+  // var body = new Physijs.CylinderMesh(
+    new THREE.CylinderGeometry(1, 100, 100),
+    material
+  );
   avatar.add(body);
 
   var img = new Image();
@@ -236,7 +265,7 @@ function river() {
 function animate() {
   // note: three.js includes requestAnimationFrame shim
   requestAnimationFrame(animate);
-  TWEEN.update();
+  //TWEEN.update();
   render();
 }
 
@@ -246,32 +275,34 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
- detectCollision();
+  // detectCollision();
 
-  if (controls.moveUp) controls.moveUp = false;
-  if (controls.moveDown) controls.moveDown = false;
+  // if (controls.moveUp) controls.moveUp = false;
+  // if (controls.moveDown) controls.moveDown = false;
 
 
-  if (controls.moveForward || controls.moveBackward ||
-      controls.moveRight || controls.moveLeft) {
-    avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
-    avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
+  // if (controls.moveForward || controls.moveBackward ||
+  //     controls.moveRight || controls.moveLeft) {
+  //   avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
+  //   avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
 
-    avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
-    avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
+  //   avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
+  //   avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
 
-    if (controls.moveLeft) spinAvatar(-Math.PI/2);
-    if (controls.moveRight) spinAvatar(Math.PI/2);
-    if (controls.moveForward) spinAvatar(Math.PI);
-    if (controls.moveBackward) spinAvatar(0);
-  }
-  else {
-    spinAvatar(0);
-  }
+  //   if (controls.moveLeft) spinAvatar(-Math.PI/2);
+  //   if (controls.moveRight) spinAvatar(Math.PI/2);
+  //   if (controls.moveForward) spinAvatar(Math.PI);
+  //   if (controls.moveBackward) spinAvatar(0);
+  // }
+  // else {
+  //   spinAvatar(0);
+  // }
+
+  scene.simulate(); // run physics
 
   renderer.render(scene, camera);
 
-  controls.update(clock.getDelta());
+  // controls.update(clock.getDelta());
 }
 
 function detectCollision() {
