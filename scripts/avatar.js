@@ -21,16 +21,43 @@ var ISLAND_WIDTH = 10 * 1000
 function init() {
   // scene = new THREE.Scene();
   scene = new Physijs.Scene;
-  scene.setGravity(0, -100, 0);
 
-  var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
-    , fenceMaterial = new THREE.MeshBasicMaterial()
-    , fence = new THREE.Mesh(fenceGeometry, fenceMaterial);
-  fence.flipSided = true;
-  fence.visible = false;
+  var fence = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 10),
+    new THREE.Material(),
+    0
+  );
+  fence.position.z = -ISLAND_HALF;
+  fence.position.y = 500;
   scene.add(fence);
 
-  blockers = [fence];
+  fence = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 10),
+    new THREE.Material(),
+    0
+  );
+  fence.position.z = ISLAND_HALF;
+  fence.position.y = 500;
+  scene.add(fence);
+
+  fence = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(10, 1000, ISLAND_WIDTH),
+    new THREE.MeshNormalMaterial(),
+    0
+  );
+  fence.position.x = -ISLAND_HALF+10;
+  fence.position.y = 500;
+  scene.add(fence);
+
+  fence = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(10, 1000, ISLAND_WIDTH),
+    new THREE.Material(),
+    0
+  );
+  fence.position.x = ISLAND_HALF-10;
+  fence.position.y = 500;
+  scene.add(fence);
+
 
   // Sky box
   var skyGeometry = new THREE.SphereGeometry(ISLAND_WIDTH, 11, 11)
@@ -49,11 +76,7 @@ function init() {
   // Island
   var island = new Physijs.PlaneMesh(
     new THREE.PlaneGeometry(ISLAND_WIDTH, ISLAND_WIDTH),
-    Physijs.createMaterial(
-      new THREE.MeshBasicMaterial({color: 0x7CFC00}),
-      1.0,
-      0.0
-    )
+    new THREE.MeshBasicMaterial({color: 0x7CFC00})
   );
   scene.add(island);
 
@@ -62,13 +85,7 @@ function init() {
   // A ball
   var ball = new Physijs.BoxMesh(
     new THREE.SphereGeometry(100),
-    // new THREE.MeshNormalMaterial(),
-    Physijs.createMaterial(
-      new THREE.MeshNormalMaterial(),
-      1.0,
-      0.0
-    ),
-    0
+    new THREE.MeshNormalMaterial()
   );
   ball.position.z = -500;
   ball.position.y = 150;
@@ -79,27 +96,13 @@ function init() {
   // a_frame = new THREE.Object3D(
   a_frame = new Physijs.BoxMesh(
     new THREE.CubeGeometry(250, 250, 250),
-    // new THREE.Material()
-    Physijs.createMaterial(
-      new THREE.Material(),
-      1.0,
-      0.0
-    ),
+    new THREE.Material(),
     1000
   );
   a_frame.position.y = 125;
-  // a_frame.setDamping({x: 100, y: 100, z: 0});
-  // a_frame.setDamping([100, 100, 0], [100, 100, 100]);
   a_frame.add(avatar);
-
-  // avatarField = new Physijs.BoxMesh(
-  //   new THREE.CubeGeometry(100, 100),
-  //   new THREE.MeshBasicMaterial()
-  // );
-  // a_frame.add(avatarField);
-
   scene.add(a_frame);
-  // a_frame.setDamping(0.9, 1.0);
+  a_frame.setDamping(0.9, 1.0);
 
   scene.add(new THREE.AmbientLight(0xffffff));
 
@@ -111,10 +114,6 @@ function init() {
   camera.position.z = 1000;
   camera.position.y = 750;
   camera.rotation.x = -Math.PI / 8;
-  // camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 100000);
-  // camera.rotation.x = -Math.PI / 64;
-  // camera.position.z = 10000;
-  // camera.position.y = 750;
   a_frame.add(camera);
 
   avatar_left_arm = avatar.getChildByName("left_arm", true);
@@ -140,7 +139,6 @@ function buildAvatar() {
   var material = new THREE.MeshNormalMaterial();
 
   var body = new THREE.Mesh(
-  // var body = new Physijs.CylinderMesh(
     new THREE.CylinderGeometry(1, 100, 100),
     material
   );
@@ -256,7 +254,7 @@ function river() {
   bottom.position.z = ISLAND_WIDTH/4;
 
   // list of water that blocks avatar
-  blockers.push(wall);
+  // blockers.push(wall);
 
   river.add(bottom);
 
@@ -274,8 +272,8 @@ function river() {
   top.position.z = ISLAND_WIDTH/4;
 
   // list of water that blocks avatar
-  blockers.push(wall);
 
+  // blockers.push(wall);
   river.add(top);
 
   river.position.y = 1;
@@ -286,7 +284,7 @@ function river() {
 function animate() {
   // note: three.js includes requestAnimationFrame shim
   requestAnimationFrame(animate);
-  //TWEEN.update();
+  TWEEN.update();
   render();
 }
 
@@ -301,24 +299,24 @@ function render() {
   // if (controls.moveUp) controls.moveUp = false;
   // if (controls.moveDown) controls.moveDown = false;
 
+  if (moving) {
+    avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
+    avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
 
-  // if (controls.moveForward || controls.moveBackward ||
-  //     controls.moveRight || controls.moveLeft) {
-  //   avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
-  //   avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
+    avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
+    avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
 
-  //   avatar_left_arm.rotation.x  =    amplitude*(Math.PI/6);
-  //   avatar_right_arm.rotation.x = -1*amplitude*(Math.PI/6);
+    if (controlState.moveLeft) spinAvatar(-Math.PI/2);
+    if (controlState.moveRight) spinAvatar(Math.PI/2);
+    if (controlState.moveForward) spinAvatar(Math.PI);
+    if (controlState.moveBackward) spinAvatar(0);
+  }
+  else {
+    spinAvatar(0);
+  }
 
-  //   if (controls.moveLeft) spinAvatar(-Math.PI/2);
-  //   if (controls.moveRight) spinAvatar(Math.PI/2);
-  //   if (controls.moveForward) spinAvatar(Math.PI);
-  //   if (controls.moveBackward) spinAvatar(0);
-  // }
-  // else {
-  //   spinAvatar(0);
-  // }
-
+  a_frame.rotation.set(0,0,0);
+  a_frame.__dirtyRotation = true;
   scene.simulate(); // run physics
 
   renderer.render(scene, camera);
@@ -348,56 +346,75 @@ function detectCollision() {
 }
 
 function spinAvatar(angle) {
+
+  // avatar.rotation.set(0,angle,0);
+  // a_frame.__dirtyRotation = true;
+
+
   new TWEEN.Tween( { y: avatar.rotation.y } )
       .to( { y: angle }, 100 )
       .onUpdate( function () {
-          avatar.rotation.y = this.y;
-      } )
+         avatar.rotation.y = this.y;
+      })
       .start();
 }
 
 
 var speed = 500;
+var moving = false;
+var controlState = {};
 document.addEventListener("keydown", function(event) {
-  var code = event.which || event.keyCode;
-  console.log(code);
-  if (code == 0x57) { // w
-    console.log("moveForward");
-    a_frame.setLinearVelocity({z: -speed, y: 0, x: 0 });
-    // a_frame.applyCentralForce({z: -speed, y: 0, x: 0 });
-
+  // Last wins (for now) because we set the velocity, not apply force
+  function setState(state) {
+    moving = true;
+    controlState = {};
+    controlState[state] = true;
   }
-  else if (code == 0x41) { // a
-    console.log("moveleft");
+
+  var code = event.which || event.keyCode;
+  if (code == 0x57) { // w
+    setState("moveForward");
+    a_frame.setLinearVelocity({z: -speed, y: 0, x: 0 });
+  }
+  if (code == 0x41) { // a
+    setState("moveLeft");
     a_frame.setLinearVelocity({z: 0, y: 0, x: -speed });
   }
-  else if (code == 0x53) { // s
-    console.log("moveBackward");
+  if (code == 0x53) { // s
+    moving = true;
+    setState("moveBackward");
     a_frame.setLinearVelocity({z: speed, y: 0, x: 0 });
   }
-  else if (code == 0x44) { // d
-    console.log("moveRight");
+  if (code == 0x44) { // d
+    moving = true;
+    setState("moveRight");
     a_frame.setLinearVelocity({z: 0, y: 0, x: speed });
   }
 });
 
-// document.addEventListener("keyup", function(event) {
-//   var code = event.which || event.keyCode;
-//   console.log(code);
-//   if (code == 0x57) { // w
-//     console.log("stopForward");
-//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
-//   }
-//   else if (code == 0x41) { // a
-//     console.log("stopleft");
-//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
-//   }
-//   else if (code == 0x53) { // s
-//     console.log("stopBackward");
-//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
-//   }
-//   else if (code == 0x44) { // d
-//     console.log("stopRight");
-//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
-//   }
-// });
+document.addEventListener("keyup", function(event) {
+  function stopState(state) {
+    if (controlState[state]) {
+      moving = false;
+      controlState = {};
+    }
+  }
+
+  var code = event.which || event.keyCode;
+  if (code == 0x57) { // w
+    stopState("moveForward");
+    // a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+  }
+  else if (code == 0x41) { // a
+    stopState("moveLeft");
+    // a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+  }
+  else if (code == 0x53) { // s
+    stopState("moveBackward");
+    // a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+  }
+  else if (code == 0x44) { // d
+    stopState("moveRight");
+    // a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+  }
+});
