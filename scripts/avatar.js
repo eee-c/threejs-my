@@ -21,6 +21,7 @@ var ISLAND_WIDTH = 10 * 1000
 function init() {
   // scene = new THREE.Scene();
   scene = new Physijs.Scene;
+  scene.setGravity(0, -100, 0);
 
   var fenceGeometry = new THREE.CubeGeometry(ISLAND_WIDTH, 10000, ISLAND_WIDTH)
     , fenceMaterial = new THREE.MeshBasicMaterial()
@@ -48,16 +49,26 @@ function init() {
   // Island
   var island = new Physijs.PlaneMesh(
     new THREE.PlaneGeometry(ISLAND_WIDTH, ISLAND_WIDTH),
-    new THREE.MeshBasicMaterial({color: 0x7CFC00})
+    Physijs.createMaterial(
+      new THREE.MeshBasicMaterial({color: 0x7CFC00}),
+      1.0,
+      0.0
+    )
   );
   scene.add(island);
 
   scene.add(river());
 
   // A ball
-  var ball = new Physijs.SphereMesh(
+  var ball = new Physijs.BoxMesh(
     new THREE.SphereGeometry(100),
-    new THREE.MeshNormalMaterial()
+    // new THREE.MeshNormalMaterial(),
+    Physijs.createMaterial(
+      new THREE.MeshNormalMaterial(),
+      1.0,
+      0.0
+    ),
+    0
   );
   ball.position.z = -500;
   ball.position.y = 150;
@@ -67,9 +78,18 @@ function init() {
   avatar.position.y = 30;
   // a_frame = new THREE.Object3D(
   a_frame = new Physijs.BoxMesh(
-    new THREE.CubeGeometry(250, 250, 250)
+    new THREE.CubeGeometry(250, 250, 250),
+    // new THREE.Material()
+    Physijs.createMaterial(
+      new THREE.Material(),
+      1.0,
+      0.0
+    ),
+    1000
   );
   a_frame.position.y = 125;
+  // a_frame.setDamping({x: 100, y: 100, z: 0});
+  // a_frame.setDamping([100, 100, 0], [100, 100, 100]);
   a_frame.add(avatar);
 
   // avatarField = new Physijs.BoxMesh(
@@ -79,6 +99,7 @@ function init() {
   // a_frame.add(avatarField);
 
   scene.add(a_frame);
+  // a_frame.setDamping(0.9, 1.0);
 
   scene.add(new THREE.AmbientLight(0xffffff));
 
@@ -96,10 +117,10 @@ function init() {
   // camera.position.y = 750;
   a_frame.add(camera);
 
-  // avatar_left_arm = avatar.getChildByName("left_arm", true);
-  // avatar_right_arm = avatar.getChildByName("right_arm", true);
-  // avatar_left_leg = avatar.getChildByName("left_leg", true);
-  // avatar_right_leg = avatar.getChildByName("right_leg", true);
+  avatar_left_arm = avatar.getChildByName("left_arm", true);
+  avatar_right_arm = avatar.getChildByName("right_arm", true);
+  avatar_left_leg = avatar.getChildByName("left_leg", true);
+  avatar_right_leg = avatar.getChildByName("right_leg", true);
 
   if (webgl) renderer = new THREE.WebGLRenderer();
   else if (canvas) renderer = new THREE.CanvasRenderer();
@@ -334,3 +355,49 @@ function spinAvatar(angle) {
       } )
       .start();
 }
+
+
+var speed = 500;
+document.addEventListener("keydown", function(event) {
+  var code = event.which || event.keyCode;
+  console.log(code);
+  if (code == 0x57) { // w
+    console.log("moveForward");
+    a_frame.setLinearVelocity({z: -speed, y: 0, x: 0 });
+    // a_frame.applyCentralForce({z: -speed, y: 0, x: 0 });
+
+  }
+  else if (code == 0x41) { // a
+    console.log("moveleft");
+    a_frame.setLinearVelocity({z: 0, y: 0, x: -speed });
+  }
+  else if (code == 0x53) { // s
+    console.log("moveBackward");
+    a_frame.setLinearVelocity({z: speed, y: 0, x: 0 });
+  }
+  else if (code == 0x44) { // d
+    console.log("moveRight");
+    a_frame.setLinearVelocity({z: 0, y: 0, x: speed });
+  }
+});
+
+// document.addEventListener("keyup", function(event) {
+//   var code = event.which || event.keyCode;
+//   console.log(code);
+//   if (code == 0x57) { // w
+//     console.log("stopForward");
+//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+//   }
+//   else if (code == 0x41) { // a
+//     console.log("stopleft");
+//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+//   }
+//   else if (code == 0x53) { // s
+//     console.log("stopBackward");
+//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+//   }
+//   else if (code == 0x44) { // d
+//     console.log("stopRight");
+//     a_frame.setLinearVelocity({z: 0, y: 0, x: 0 });
+//   }
+// });
