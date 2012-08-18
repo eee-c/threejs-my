@@ -24,7 +24,9 @@ function init() {
 
   var fence = new Physijs.BoxMesh(
     new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 10),
-    new THREE.Material(),
+    Physijs.createMaterial(
+      new THREE.Material(), 0.2, 1.0
+    ),
     0
   );
   fence.position.z = -ISLAND_HALF;
@@ -33,7 +35,9 @@ function init() {
 
   fence = new Physijs.BoxMesh(
     new THREE.CubeGeometry(ISLAND_WIDTH, 1000, 10),
-    new THREE.Material(),
+    Physijs.createMaterial(
+      new THREE.Material(), 0.2, 1.0
+    ),
     0
   );
   fence.position.z = ISLAND_HALF;
@@ -42,7 +46,9 @@ function init() {
 
   fence = new Physijs.BoxMesh(
     new THREE.CubeGeometry(10, 1000, ISLAND_WIDTH),
-    new THREE.MeshNormalMaterial(),
+    Physijs.createMaterial(
+      new THREE.Material(), 0.2, 1.0
+    ),
     0
   );
   fence.position.x = -ISLAND_HALF+10;
@@ -51,13 +57,14 @@ function init() {
 
   fence = new Physijs.BoxMesh(
     new THREE.CubeGeometry(10, 1000, ISLAND_WIDTH),
-    new THREE.Material(),
+    Physijs.createMaterial(
+      new THREE.Material(), 0.2, 1.0
+    ),
     0
   );
   fence.position.x = ISLAND_HALF-10;
   fence.position.y = 500;
   scene.add(fence);
-
 
   // Sky box
   var skyGeometry = new THREE.SphereGeometry(ISLAND_WIDTH, 11, 11)
@@ -83,12 +90,17 @@ function init() {
   scene.add(river());
 
   // A ball
-  var ball = new Physijs.BoxMesh(
+  ball = new Physijs.SphereMesh(
     new THREE.SphereGeometry(100),
-    new THREE.MeshNormalMaterial()
+    Physijs.createMaterial(
+      new THREE.MeshNormalMaterial(),
+      0.2,
+      1.0
+    )
   );
+
   ball.position.z = -500;
-  ball.position.y = 150;
+  ball.position.y = 100;
   scene.add(ball);
 
   avatar = buildAvatar();
@@ -97,7 +109,7 @@ function init() {
   a_frame = new Physijs.BoxMesh(
     new THREE.CubeGeometry(250, 250, 250),
     new THREE.Material(),
-    1000
+    1000*1000*1000
   );
   a_frame.position.y = 125;
   a_frame.add(avatar);
@@ -294,11 +306,6 @@ function render() {
     , t = t_float * 1000
     , amplitude = (w/2 - Math.abs((t % (2*w)) - w))/w;
 
-  // detectCollision();
-
-  // if (controls.moveUp) controls.moveUp = false;
-  // if (controls.moveDown) controls.moveDown = false;
-
   if (moving) {
     avatar_left_leg.rotation.x  =    amplitude*(Math.PI/6);
     avatar_right_leg.rotation.x = -1*amplitude*(Math.PI/6);
@@ -324,33 +331,7 @@ function render() {
   // controls.update(clock.getDelta());
 }
 
-function detectCollision() {
-  var x, z;
-  if (controls.moveLeft) z = 1;
-  if (controls.moveRight) z = -1;
-  if (controls.moveBackward) x = 1;
-  if (controls.moveForward) x = -1;
-
-  var vector = new THREE.Vector3( x, 0, z );
-  var ray = new THREE.Ray(controls.object.position, vector);
-  var intersects = ray.intersectObjects(blockers);
-
-  if (intersects.length > 0) {
-    if (intersects[0].distance < 75) {
-      if (controls.moveLeft) controls.moveLeft = false;
-      if (controls.moveRight) controls.moveRight = false;
-      if (controls.moveBackward) controls.moveBackward = false;
-      if (controls.moveForward) controls.moveForward = false;
-    }
-  }
-}
-
 function spinAvatar(angle) {
-
-  // avatar.rotation.set(0,angle,0);
-  // a_frame.__dirtyRotation = true;
-
-
   new TWEEN.Tween( { y: avatar.rotation.y } )
       .to( { y: angle }, 100 )
       .onUpdate( function () {
