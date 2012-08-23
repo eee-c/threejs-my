@@ -1,4 +1,6 @@
-var raft, camera, scene, renderer;
+var raft, current_river, camera, scene, renderer;
+
+var offset;
 
 var canvas = !! window.CanvasRenderingContext2D;
 var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
@@ -34,17 +36,9 @@ function init() {
   scene.add(land);
 
   // River
-  river_segment = riverSegment();
-  river_segment.position.z = 100;
-  river_segment.position.x = 100;
-  river_segment.rotation.y = Math.PI/8;
-  while (river_segment.children.length > 0) {
-    var child = river_segment.children[0];
-    child.__dirtyPosition = true;
-    child.__dirtyRotation = true;
-    scene.add(child);
-  }
-
+  offset = riverSegment(scene, Math.PI/8);
+  offset = riverSegment(scene, 0, offset);
+  offset = riverSegment(scene, -Math.PI/8, offset);
 
   // scene.add(river_segment);
   // var river1 = riverSegment(scene, 50, 0);
@@ -68,15 +62,24 @@ function init() {
   scene.add(camera);
 }
 
-function riverSegment() {
-  var segment = new THREE.Object3D();
+function riverSegment(scene, rotation, offset) {
+  if (!offset) offset = {x: 0, z: 0};
+
+  var length = 1500
+    // , rotation = -Math.PI/8
+    , z_frame = 0.5 * length * Math.sin(rotation)
+    , z_offset = z_frame + offset.z
+    , x_frame = 0.5 * length * Math.cos(rotation)
+    , x_offset = x_frame + offset.x;
 
   var water = new Physijs.PlaneMesh(
     new THREE.PlaneGeometry(1500, 500),
     new THREE.MeshBasicMaterial({color: 0x483D8B})
   );
-  water.position.x = 750;
-  segment.add(water);
+  water.position.x = x_offset;
+  water.position.z = -z_offset;
+  water.rotation.y = rotation;
+  scene.add(water);
 
   var bank1 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
@@ -85,10 +88,10 @@ function riverSegment() {
     ),
     0
   );
-  bank1.position.x = 750;
-  bank1.position.z = -250;
-  bank1.__dirtyPosition = true;
-  segment.add(bank1);
+  bank1.position.x = x_offset;
+  bank1.position.z = -z_offset -250;
+  bank1.rotation.y = rotation;
+  scene.add(bank1);
 
   var bank2 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
@@ -97,12 +100,12 @@ function riverSegment() {
     ),
     0
   );
-  bank2.position.x = 750;
-  bank2.position.z = 250;
-  bank2.__dirtyPosition = true;
-  segment.add(bank2);
+  bank2.position.x = x_offset;
+  bank2.position.z = -z_offset + 250;
+  bank2.rotation.y = rotation;
+  scene.add(bank2);
 
-  return segment;
+  return {x: 2 * x_frame + offset.x - 50, z: 2 * z_frame + offset.z};
 }
 
 
