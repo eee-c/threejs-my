@@ -66,10 +66,11 @@ function riverSegment(scene, rotation, offset) {
   if (!offset) offset = {x: 0, z: 0};
 
   var length = 1500
-    // , rotation = -Math.PI/8
-    , z_frame = 0.5 * length * Math.sin(rotation)
+    , sin = Math.sin(rotation)
+    , cos = Math.cos(rotation)
+    , z_frame = 0.5 * length * sin
     , z_offset = z_frame + offset.z
-    , x_frame = 0.5 * length * Math.cos(rotation)
+    , x_frame = 0.5 * length * cos
     , x_offset = x_frame + offset.x;
 
   var water = new Physijs.PlaneMesh(
@@ -79,7 +80,10 @@ function riverSegment(scene, rotation, offset) {
   water.position.x = x_offset;
   water.position.z = -z_offset;
   water.rotation.y = rotation;
-  scene.add(water);
+
+  water.addEventListener('collision', function(object) {
+    raft.applyCentralForce(new THREE.Vector3(1e9 * cos, 0, 1e9 * sin));
+  });
 
   var bank1 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
@@ -88,10 +92,8 @@ function riverSegment(scene, rotation, offset) {
     ),
     0
   );
-  bank1.position.x = x_offset;
-  bank1.position.z = -z_offset -250;
-  bank1.rotation.y = rotation;
-  scene.add(bank1);
+  bank1.position.z = -250;
+  water.add(bank1);
 
   var bank2 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
@@ -100,10 +102,10 @@ function riverSegment(scene, rotation, offset) {
     ),
     0
   );
-  bank2.position.x = x_offset;
-  bank2.position.z = -z_offset + 250;
-  bank2.rotation.y = rotation;
-  scene.add(bank2);
+  bank2.position.z = 250;
+  water.add(bank2);
+
+  scene.add(water);
 
   return {x: 2 * x_frame + offset.x - 50, z: 2 * z_frame + offset.z};
 }
