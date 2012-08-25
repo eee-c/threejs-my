@@ -19,11 +19,11 @@ function init() {
     new THREE.Vector3(0,0,0)
   );
 
-  var plane = new Physijs.PlaneMesh(
-    new THREE.PlaneGeometry(15, 1000),
+  var plane = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(15, 1, 1000),
     new THREE.MeshBasicMaterial({color: 0x7CFC00})
   );
-  plane.position.y = -5;
+  plane.position.y = -6;
   scene.add(plane);
   console.log("plane: " + plane.id);
 
