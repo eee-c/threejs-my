@@ -45,6 +45,10 @@ function init() {
   raft = buildRaft();
   scene.add(raft);
   raft.setDamping(0.0, 1.0);
+  raft.addEventListener('collision', function(object) {
+    console.log('raft');
+    console.log(object);
+  });
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
   camera.position.y = 500;
@@ -98,33 +102,51 @@ function riverSegment(scene, rotation, offset) {
   water.position.z = -z_offset;
   water.rotation.y = rotation;
 
-  water.addEventListener('collision', function(object) {
-    raft.applyCentralForce(new THREE.Vector3(1e8 * cos, 0, 1e8 * sin));
-  });
+  // (function(w, c, s) {
+  //   console.log(w)
+  //   w.addEventListener('collision', function(object) {
+  //     console.log(c + " ::: " + s);
+  //     raft.applyCentralForce(new THREE.Vector3(1e8 * c, 0, 1e8 * s));
+  //   });
+  // })(water, cos, sin);
 
   var bank1 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
     Physijs.createMaterial(
-      new THREE.MeshNormalMaterial(), 0.2, 0.9
+      new THREE.Material(), 0.2, 0.9
     ),
     0
   );
-  bank1.position.z = -250;
+  bank1.position.z = -300;
   water.add(bank1);
 
   var bank2 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
     Physijs.createMaterial(
-      new THREE.MeshNormalMaterial(), 0.2, 0.9
+      new THREE.Material(), 0.2, 0.9
     ),
     0
   );
-  bank2.position.z = 250;
+  bank2.position.z = 300;
+  bank2.addEventListener('collision', function() {console.log('bank2');});
   water.add(bank2);
 
   scene.add(water);
+  addCurrent(water, cos, sin);
+  bank1.addEventListener('collision', function() {console.log('bank1');});
+
 
   return {x: 2 * x_frame + offset.x - 50, z: 2 * z_frame + offset.z};
+}
+
+function addCurrent(river_segment, c, s) {
+  river_segment.addEventListener('collision', function(object) {
+    if (object.id != raft.id) return;
+    console.log(this.id);
+    console.log(object.id);
+    console.log(c + " ::: " + s);
+    raft.applyCentralForce(new THREE.Vector3(1e8 * c, 0, 1e8 * s));
+  });
 }
 
 
@@ -167,5 +189,5 @@ function pushRaft() {
 
 function rotateRaft(direction) {
   raft.__dirtyRotation = true;
-  raft.rotation.z = raft.rotation.z + direction * Math.PI / 100;
+  raft.rotation.z = raft.rotation.z + direction * Math.PI / 10;
 }
