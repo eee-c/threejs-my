@@ -1,4 +1,4 @@
-var raft, current_river, camera, scene, renderer;
+var raft, current_river, camera, scene, renderer, river_segments;
 
 var offset;
 
@@ -36,6 +36,7 @@ function init() {
   scene.add(land);
 
   // River
+  river_segments = [];
   offset = riverSegment(scene, Math.PI/8);
   offset = riverSegment(scene, 0, offset);
   offset = riverSegment(scene, -Math.PI/8, offset);
@@ -45,10 +46,6 @@ function init() {
   raft = buildRaft();
   scene.add(raft);
   raft.setDamping(0.0, 1.0);
-  raft.addEventListener('collision', function(object) {
-    console.log('raft');
-    console.log(object);
-  });
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
   camera.position.y = 500;
@@ -79,7 +76,6 @@ function buildRaft() {
   raft.position.y = 20;
   raft.rotation.x = Math.PI/2;
 
-
   return raft;
 }
 
@@ -102,14 +98,6 @@ function riverSegment(scene, rotation, offset) {
   water.position.z = -z_offset;
   water.rotation.y = rotation;
 
-  // (function(w, c, s) {
-  //   console.log(w)
-  //   w.addEventListener('collision', function(object) {
-  //     console.log(c + " ::: " + s);
-  //     raft.applyCentralForce(new THREE.Vector3(1e8 * c, 0, 1e8 * s));
-  //   });
-  // })(water, cos, sin);
-
   var bank1 = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1500, 100, 100),
     Physijs.createMaterial(
@@ -128,30 +116,18 @@ function riverSegment(scene, rotation, offset) {
     0
   );
   bank2.position.z = 300;
-  bank2.addEventListener('collision', function() {console.log('bank2');});
   water.add(bank2);
 
   scene.add(water);
-  addCurrent(water, cos, sin);
-  bank1.addEventListener('collision', function() {console.log('bank1');});
-
+  river_segments.push(water);
 
   return {x: 2 * x_frame + offset.x - 50, z: 2 * z_frame + offset.z};
-}
-
-function addCurrent(river_segment, c, s) {
-  river_segment.addEventListener('collision', function(object) {
-    if (object.id != raft.id) return;
-    console.log(this.id);
-    console.log(object.id);
-    console.log(c + " ::: " + s);
-    raft.applyCentralForce(new THREE.Vector3(1e8 * c, 0, 1e8 * s));
-  });
 }
 
 
 function animate() {
   requestAnimationFrame(animate);
+  applyRiverCurrent();
   scene.simulate(); // run physics
   render();
 }
@@ -161,6 +137,27 @@ function render() {
   camera.position.z = raft.position.z;
 
   renderer.render(scene, camera);
+}
+
+function applyRiverCurrent() {
+  var ray = new THREE.Ray(
+    raft.position,
+    new THREE.Vector3(0, -1, 0)
+  );
+
+  var intersects = ray.intersectObjects(river_segments);
+  if (!intersects[0]) return;
+
+  var current_segment = intersects[0].object;
+  if (!current_segment) return;
+
+  var angle = -current_segment.rotation.y
+    , cos = Math.cos(angle)
+    , sine = Math.sin(angle);
+
+  raft.applyCentralForce(
+    new THREE.Vector3(1e6 * cos, 0, 1e6 * sine)
+  );
 }
 
 document.addEventListener("keydown", function(event) {
