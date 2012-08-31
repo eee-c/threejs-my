@@ -1,5 +1,5 @@
 var raft, current_river, camera, scene, renderer,
-    river_segments, obstacles;
+    river_segments, obstacle_markers;
 
 var offset;
 
@@ -38,19 +38,19 @@ function init() {
 
   // River
   river_segments = [];
-  obstacles = [];
+  obstacle_markers = [];
   //  buildRiver([R, S, L, L, L, S, L, R, S])
 
   offset = riverSegment(0);
   offset = riverSegment(Math.PI/8,  offset);
-  // offset = riverSegment(0,          offset);
-  // offset = riverSegment(-Math.PI/8, offset);
-  // offset = riverSegment(-Math.PI/8, offset);
-  // offset = riverSegment(-Math.PI/8, offset);
-  // offset = riverSegment(0,          offset);
-  // offset = riverSegment(-Math.PI/8, offset);
-  // offset = riverSegment(Math.PI/8,  offset);
-  // offset = riverSegment(0,          offset);
+  offset = riverSegment(0,          offset);
+  offset = riverSegment(-Math.PI/8, offset);
+  offset = riverSegment(-Math.PI/8, offset);
+  offset = riverSegment(-Math.PI/8, offset);
+  offset = riverSegment(0,          offset);
+  offset = riverSegment(-Math.PI/8, offset);
+  offset = riverSegment(Math.PI/8,  offset);
+  offset = riverSegment(0,          offset);
 
   riverEnd(offset);
 
@@ -124,7 +124,7 @@ function riverSegment(rotation, offset) {
   var end = joint(250, rotation);
   segment.add(end);
 
-  addObstacle(segment);
+  addObstacleMarker(segment);
 
   scene.add(segment);
   river_segments.push(water);
@@ -193,19 +193,20 @@ function riverEnd(offset) {
   scene.add(ref);
 }
 
-function addObstacle(water) {
+function addObstacleMarker(water) {
   var width = 250
     , length = 1500
     , x = Math.random() * length;
 
-  var marker = new Physijs.BoxMesh(
-    new THREE.CubeGeometry(2, 2, 2)
+  var marker = new Physijs.PlaneMesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.Material()
   );
-  marker.position.y = 1;
+
   marker.position.x = x;
   water.add(marker);
 
-  obstacles.push(marker);
+  obstacle_markers.push(marker);
 }
 
 function bank(offset) {
@@ -274,15 +275,15 @@ function animate() {
   applyRiverCurrent();
   scene.simulate(); // run physics
   render();
+  drawObstacles();
 }
 
 function render() {
   camera.position.x = raft.position.x + 0.4 * window.innerHeight ;
   camera.position.z = raft.position.z;
 
-  drawObstacles();
-
   renderer.render(scene, camera);
+
 }
 
 var _scene_obstacles = [];
@@ -294,24 +295,28 @@ function drawObstacles() {
 function ensureObstacles() {
   if (_scene_obstacles.length > 0) return;
 
-  obstacles.forEach(function(marker) {
+  obstacle_markers.forEach(function(marker) {
     var position = marker.matrixWorld.multiplyVector3(new THREE.Vector3());
     console.log(position);
     var obstacle = new Physijs.BoxMesh(
       new THREE.CubeGeometry(
-        25, 25, 25
+        40, 20, 40
       ),
       Physijs.createMaterial(
         new THREE.MeshNormalMaterial()
-      )
+      ),
+      0
     );
-    obstacle.position.y = 13;
+    obstacle.position.y = 21;
     obstacle.position.x = position.x;
     obstacle.position.z = position.z;
     scene.add(obstacle);
 
     obstacle.addEventListener('collision', function(object) {
-      if (object == raft) console.log("Game Over!!!!");
+      if (object == raft) console.log("Game Over!!!!")
+      else {
+        console.log(object);
+      }
     });
 
     _scene_obstacles.push(obstacle);
