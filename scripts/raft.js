@@ -1,4 +1,5 @@
-var raft, current_river, camera, scene, renderer, river_segments;
+var raft, current_river, camera, scene, renderer,
+    river_segments, obstacles;
 
 var offset;
 
@@ -37,18 +38,19 @@ function init() {
 
   // River
   river_segments = [];
-//  buildRiver([R, S, L, L, L, S, L, R, S])
+  obstacles = [];
+  //  buildRiver([R, S, L, L, L, S, L, R, S])
 
-  offset = riverSegment(Math.PI/8);
-  offset = riverSegment(0,          offset);
-  offset = riverSegment(0,          offset);
-  offset = riverSegment(-Math.PI/8, offset);
-  offset = riverSegment(-Math.PI/8, offset);
-  offset = riverSegment(-Math.PI/8, offset);
-  offset = riverSegment(0,          offset);
-  offset = riverSegment(-Math.PI/8, offset);
+  offset = riverSegment(0);
   offset = riverSegment(Math.PI/8,  offset);
-  offset = riverSegment(0,          offset);
+  // offset = riverSegment(0,          offset);
+  // offset = riverSegment(-Math.PI/8, offset);
+  // offset = riverSegment(-Math.PI/8, offset);
+  // offset = riverSegment(-Math.PI/8, offset);
+  // offset = riverSegment(0,          offset);
+  // offset = riverSegment(-Math.PI/8, offset);
+  // offset = riverSegment(Math.PI/8,  offset);
+  // offset = riverSegment(0,          offset);
 
   riverEnd(offset);
 
@@ -87,6 +89,11 @@ function buildRaft() {
   raft.position.y = 20;
   raft.rotation.x = Math.PI/2;
 
+  // raft.addEventListener("collision", function(object) {
+  //   console.log(object);
+  // });
+
+
   return raft;
 }
 
@@ -117,8 +124,18 @@ function riverSegment(rotation, offset) {
   var end = joint(250, rotation);
   segment.add(end);
 
+  addObstacle(segment);
+
   scene.add(segment);
   river_segments.push(water);
+
+  // segment.addEventListener("collision", function(object) {
+  //   console.log("[segment] x collision!");
+  // });
+
+  // water.addEventListener("collision", function(object) {
+  //   console.log("[water] x collision!");
+  // });
 
   return {
     x: Math.cos(rotation) * 1500 + offset.x,
@@ -176,6 +193,20 @@ function riverEnd(offset) {
   scene.add(ref);
 }
 
+function addObstacle(water) {
+  var width = 250
+    , length = 1500
+    , x = Math.random() * length;
+
+  var marker = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(2, 2, 2)
+  );
+  marker.position.y = 1;
+  marker.position.x = x;
+  water.add(marker);
+
+  obstacles.push(marker);
+}
 
 function bank(offset) {
   var width = 100
@@ -184,10 +215,10 @@ function bank(offset) {
   var bank = new Physijs.BoxMesh(
     new THREE.CubeGeometry(1400, 100, 100),
     Physijs.createMaterial(
-      new THREE.MeshNormalMaterial(), 0.2, 0.9
+      new THREE.Material(), 0.2, 0.9
     ),
     0
-        );
+  );
   bank.position.x = 100;
   if (offset < 0) {
     bank.position.z = offset - half;
@@ -195,6 +226,12 @@ function bank(offset) {
   else {
     bank.position.z = offset + half;
   }
+
+  bank.addEventListener("collision", function(object) {
+    console.log("bank!")
+  });
+
+
 
   return bank;
 }
@@ -240,11 +277,47 @@ function animate() {
 }
 
 function render() {
-  camera.position.x = raft.position.x;
+  camera.position.x = raft.position.x + 0.4 * window.innerHeight ;
   camera.position.z = raft.position.z;
+
+  drawObstacles();
 
   renderer.render(scene, camera);
 }
+
+var _scene_obstacles = [];
+function drawObstacles() {
+  ensureObstacles();
+  // update as needed...
+}
+
+function ensureObstacles() {
+  if (_scene_obstacles.length > 0) return;
+
+  obstacles.forEach(function(marker) {
+    var position = marker.matrixWorld.multiplyVector3(new THREE.Vector3());
+    console.log(position);
+    var obstacle = new Physijs.BoxMesh(
+      new THREE.CubeGeometry(
+        25, 25, 25
+      ),
+      Physijs.createMaterial(
+        new THREE.MeshNormalMaterial()
+      )
+    );
+    obstacle.position.y = 13;
+    obstacle.position.x = position.x;
+    obstacle.position.z = position.z;
+    scene.add(obstacle);
+
+    obstacle.addEventListener('collision', function(object) {
+      if (object == raft) console.log("Game Over!!!!");
+    });
+
+    _scene_obstacles.push(obstacle);
+  });
+}
+
 
 function applyRiverCurrent() {
   var ray = new THREE.Ray(
