@@ -1,35 +1,109 @@
-var raft, current_river, camera, scene, renderer,
-    river_segments, obstacle_markers;
-
-var offset;
-
-var canvas = !! window.CanvasRenderingContext2D;
-var webgl = ( function () { try { return !! window.WebGLRenderingContext && !! document.createElement( 'canvas' ).getContext( 'experimental-webgl' ); } catch( e ) { return false; } } )();
-
+// Physics
+Physijs.scripts.ammo = 'http://gamingJS.com/ammo.js';
 Physijs.scripts.worker = 'scripts/physijs_worker.js';
-Physijs.scripts.ammo = 'ammo.js';
+// Physijs.scripts.worker = 'http://gamingJS.com/physijs_worker.js';
 
-document.addEventListener( "DOMContentLoaded", function() {
+var raft, current_river, camera, scene, renderer,
+    river_segments, obstacle_markers,
+    lake, game_over;
+
+document.addEventListener("DOMContentLoaded", function() {
   init();
-  animate();
+
+  if (!renderer) {
+    alert("Can't make renderer. What kind of browser are you using?!");
+    return;
+  }
+
+  setTimeout(startGame, 500);
 });
 
+var start;
+function startGame() {
+  start = new Date();
+  runTimer();
+  animate();
+}
+
+function runTimer() {
+  if (game_over) return;
+
+  writeTime();
+  setTimeout(runTimer, 500);
+}
+
+function writeTime() {
+  var now = new Date()
+    , diff = now.getTime() - start.getTime()
+    , seconds = diff / 1000;
+  writeScoreBoard(seconds);
+  return seconds;
+}
+
 function init() {
-  if (webgl) renderer = new THREE.WebGLRenderer();
-  else if (canvas) renderer = new THREE.CanvasRenderer();
-  if (renderer) {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColorHex(0x87CEEB);
-    document.body.appendChild(renderer.domElement);
-  }
-  else {
-    alert("Can't make renderer. What kind of browser are you using?!");
-  }
+  initScoreBoard();
+
+  renderer = initRenderer(0x87CEEB);
 
   scene = new Physijs.Scene;
 
+  initRiver(scene);
+
+  raft = initRaft(scene);
+
+  camera = new THREE.PerspectiveCamera(
+    75, window.innerWidth / window.innerHeight, 1, 10000
+  );
+  camera.position.y = 500;
+  camera.lookAt(raft.position);
+
+  scene.add(camera);
+}
+
+function initScoreBoard() {
+  var text = document.createElement('div');
+  text.id = 'scoreboard';
+  text.style.position = 'absolute';
+  text.style.backgroundColor = 'white';
+  text.style.borderRadius = "5px";
+  text.style.padding = "0px 20px";
+  text.style.left = "50px";
+  text.style.top = "75px";
+  text.style.height = "200px";
+  document.body.appendChild(text);
+
+  writeScoreBoard(
+    'j / k to turn; space to move' +
+    '<br/>' +
+    'Press space to start'
+  );
+}
+
+function writeScoreBoard(message) {
+  var text = document.getElementById('scoreboard');
+  text.innerHTML = message;
+}
+
+function initRenderer(bgColor) {
+  var renderer = renderingStrategy();
+
+  document.body.style.margin = '0px';
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColorHex(bgColor);
+  document.body.appendChild(renderer.domElement);
+
+  return renderer;
+}
+
+function renderingStrategy() {
+  if (Detector.webgl) return new THREE.WebGLRenderer();
+  if (Detector.canvas) return new THREE.CanvasRenderer();
+  return undefined;
+}
+
+function initRiver(scene) {
   // Land
-  var land = new Physijs.PlaneMesh(
+  var land = new THREE.Mesh(
     new THREE.PlaneGeometry(1e6, 1e6),
     new THREE.MeshBasicMaterial({color: 0x7CFC00})
   );
@@ -41,6 +115,7 @@ function init() {
   obstacle_markers = [];
   //  buildRiver([R, S, L, L, L, S, L, R, S])
 
+  var offset;
   offset = riverSegment(0);
   offset = riverSegment(Math.PI/8,  offset);
   offset = riverSegment(0,          offset);
@@ -52,22 +127,10 @@ function init() {
   offset = riverSegment(Math.PI/8,  offset);
   offset = riverSegment(0,          offset);
 
-  riverEnd(offset);
-
-  // scene.add(river_segment);
-  // var river1 = riverSegment(scene, 50, 0);
-  raft = buildRaft();
-  scene.add(raft);
-  raft.setDamping(0.0, 1.0);
-
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
-  camera.position.y = 500;
-  camera.lookAt(raft.position);
-
-  scene.add(camera);
+  lake = riverEnd(offset);
 }
 
-function buildRaft() {
+function initRaft(scene) {
   var raft = new Physijs.ConvexMesh(
     new THREE.TorusGeometry(25, 10, 16, 16),
     Physijs.createMaterial(
@@ -89,10 +152,8 @@ function buildRaft() {
   raft.position.y = 20;
   raft.rotation.x = Math.PI/2;
 
-  // raft.addEventListener("collision", function(object) {
-  //   console.log(object);
-  // });
-
+  scene.add(raft);
+  raft.setDamping(0.0, 1.0);
 
   return raft;
 }
@@ -118,8 +179,8 @@ function riverSegment(rotation, offset) {
   water.position.x = half;
   segment.add(water);
 
-  water.add(bank(-250));
-  water.add(bank(250));
+  water.add(bank(length, -250));
+  water.add(bank(length, 250));
 
   var end = joint(250, rotation);
   segment.add(end);
@@ -129,19 +190,34 @@ function riverSegment(rotation, offset) {
   scene.add(segment);
   river_segments.push(water);
 
-  // segment.addEventListener("collision", function(object) {
-  //   console.log("[segment] x collision!");
-  // });
-
-  // water.addEventListener("collision", function(object) {
-  //   console.log("[water] x collision!");
-  // });
-
   return {
     x: Math.cos(rotation) * 1500 + offset.x,
     z: -Math.sin(rotation) * 1500 + offset.z
   };
 }
+
+function bank(length, z) {
+  var width = 100
+    , half = width / 2;
+
+  var bank = new Physijs.BoxMesh(
+    new THREE.CubeGeometry(length*.9, 100, width),
+      Physijs.createMaterial(
+        new THREE.MeshNormalMaterial(), 0.2, 0.9
+      ),
+    0
+  );
+
+ if (z < 0) {
+    bank.position.z = z - half;
+  }
+  else {
+    bank.position.z = z + half;
+  }
+
+  return bank;
+}
+
 
 function riverEnd(offset) {
   var wall_width = 100
@@ -167,7 +243,7 @@ function riverEnd(offset) {
     ),
     0
   );
-  bottom.position.x = radius;
+  bottom.position.x = radius/2;
   ref.add(bottom);
 
   var right = new Physijs.BoxMesh(
@@ -177,7 +253,7 @@ function riverEnd(offset) {
     ),
     0
   );
-  right.position.z = -radius;
+  right.position.z = -radius/2;
   ref.add(right);
 
   var left = new Physijs.BoxMesh(
@@ -187,10 +263,12 @@ function riverEnd(offset) {
     ),
     0
   );
-  left.position.z = radius;
+  left.position.z = radius/2;
   ref.add(left);
 
   scene.add(ref);
+
+  return water;
 }
 
 function addObstacleMarker(water) {
@@ -207,34 +285,6 @@ function addObstacleMarker(water) {
   water.add(marker);
 
   obstacle_markers.push(marker);
-}
-
-function bank(offset) {
-  var width = 100
-    , half = width / 2;
-
-  var bank = new Physijs.BoxMesh(
-    new THREE.CubeGeometry(1400, 100, 100),
-    Physijs.createMaterial(
-      new THREE.Material(), 0.2, 0.9
-    ),
-    0
-  );
-  bank.position.x = 100;
-  if (offset < 0) {
-    bank.position.z = offset - half;
-  }
-  else {
-    bank.position.z = offset + half;
-  }
-
-  bank.addEventListener("collision", function(object) {
-    console.log("bank!")
-  });
-
-
-
-  return bank;
 }
 
 function joint(w, rotation) {
@@ -271,8 +321,11 @@ function joint(w, rotation) {
 
 
 function animate() {
+  if (game_over) return;
+
   requestAnimationFrame(animate);
   applyRiverCurrent();
+  checkForWin();
   scene.simulate(); // run physics
   render();
   drawObstacles();
@@ -283,16 +336,10 @@ function render() {
   camera.position.z = raft.position.z;
 
   renderer.render(scene, camera);
-
 }
 
 var _scene_obstacles = [];
 function drawObstacles() {
-  ensureObstacles();
-  // update as needed...
-}
-
-function ensureObstacles() {
   if (_scene_obstacles.length > 0) return;
 
   obstacle_markers.forEach(function(marker) {
@@ -313,7 +360,7 @@ function ensureObstacles() {
     scene.add(obstacle);
 
     obstacle.addEventListener('collision', function(object) {
-      if (object == raft) console.log("Game Over!!!!")
+      if (object == raft) gameOver();
       else {
         console.log(object);
       }
@@ -323,6 +370,34 @@ function ensureObstacles() {
   });
 }
 
+function gameOver() {
+  console.log("Game Over!!!!");
+
+  writeScoreBoard('<h1>Game Over!</h1>');
+
+  game_over = true;
+}
+
+function checkForWin() {
+  var ray = new THREE.Ray(
+    raft.position,
+    new THREE.Vector3(0, -1, 0)
+  );
+
+  var intersects = ray.intersectObject(lake);
+  if (!intersects[0]) return;
+
+  game_over = true;
+
+  var time = writeTime();
+
+  writeScoreBoard(
+    '<h1>Win!</h1>' +
+    '<p>You won it in' +
+      '<br>' +
+    time + ' seconds. Yay!</p>'
+  );
+}
 
 function applyRiverCurrent() {
   var ray = new THREE.Ray(
@@ -362,11 +437,15 @@ document.addEventListener("keydown", function(event) {
 });
 
 function pushRaft() {
-  var angle = raft.rotation.z
-    , cos = Math.cos(angle)
-    , sin = Math.sin(angle);
+  var angle = raft.rotation.z;
 
-  raft.applyCentralForce(new THREE.Vector3(1e8 * cos, 0, 1e8 * sin));
+  raft.applyCentralForce(
+    new THREE.Vector3(
+      1e8 * Math.cos(angle),
+      0,
+      1e8 * Math.sin(angle)
+    )
+  );
 }
 
 function rotateRaft(direction) {
