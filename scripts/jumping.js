@@ -18,8 +18,9 @@ function init() {
   scene = new THREE.Scene;
 
   player = new THREE.Mesh(
-    new THREE.CubeGeometry(20, 50, 10),
-    new THREE.MeshBasicMaterial({color: 0xB22222})
+    new THREE.CubeGeometry(20, 50, 1),
+    // new THREE.MeshBasicMaterial({color: 0xB22222})
+    new THREE.MeshNormalMaterial({color: 0xB22222})
   );
   scene.add(player);
 
@@ -74,10 +75,9 @@ function startPhysics() {
 
   //create ground
   bodyDef.type = b2Body.b2_staticBody;
-  bodyDef.position.x = 0;
-  bodyDef.position.y = 0;
+  bodyDef.position.y = -50;
   fixDef.shape = new b2PolygonShape;
-  fixDef.shape.SetAsBox(10, 0.5);
+  fixDef.shape.SetAsBox(1e5, 0.5);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
 
   // player
@@ -85,7 +85,7 @@ function startPhysics() {
   fixDef.shape = new b2PolygonShape;
   fixDef.shape.SetAsBox(10, 0.1);
 
-  bodyDef.position.x = 0;
+  bodyDef.position.x = -20;
   bodyDef.position.y = 100;
   player_fixture = world.CreateBody(bodyDef).CreateFixture(fixDef);
 }
@@ -104,9 +104,9 @@ function gameStep() {
   );
   world.ClearForces();
 
-  var body = player_fixture.GetBody().GetDefinition();
-  player.position.x = body.position.x;
-  player.position.y = body.position.y;
+  var pos = player_fixture.GetBody().GetDefinition().position;
+  player.position.x = pos.x;
+  player.position.y = pos.y;
 
   setTimeout(gameStep, 1000 / 60); // process the game logic
                                    // at a target 60 FPS.
