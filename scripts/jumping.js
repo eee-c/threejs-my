@@ -62,7 +62,7 @@ function startPhysics() {
     , b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;
 
   world = new b2World(
-    new b2Vec2(0, -10),    //gravity
+    new b2Vec2(0, -1e2),    //gravity
     true                  //allow sleep
   );
 
@@ -110,4 +110,33 @@ function gameStep() {
 
   setTimeout(gameStep, 1000 / 60); // process the game logic
                                    // at a target 60 FPS.
+}
+
+document.addEventListener("keydown", function(event) {
+  var code = event.which || event.keyCode;
+
+  var events = {
+    37: left,  // left arrow
+    39: right, // right arrow
+    38: up,    // up arrow
+    32: up     // space bar
+  };
+
+  if (events[code]) events[code]();
+  else console.log(code);
+});
+
+function left()  { move(-1e4, 0); }
+function right() { move(1e4, 0); }
+function up()    { move(0, 1e5); }
+
+function move(x, y) {
+  var b2Vec2 = Box2D.Common.Math.b2Vec2
+    , body = player_fixture.GetBody()
+    , method = (y>0) ? 'ApplyForce' : 'ApplyImpulse';
+
+  body[method](
+    new b2Vec2(x, y),
+    body.GetWorldCenter()
+  );
 }
